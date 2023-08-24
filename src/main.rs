@@ -79,32 +79,32 @@ fn decode(
     let mut vp8dec = vp8dec::VP8Dec::init(&fourcc)?;
 
     loop {
-        match reader.read_ivf_frame_header() {
-            Ok(frame_header) => {
-                let len: usize = frame_header.frame_size as _;
-                match reader.read_frame(&mut frame_buffer[..len]) {
-                    Ok(_) => {}
-                    Err(ref e) if e.kind() == ErrorKind::UnexpectedEof => break,
-                    Err(e) => {
-                        eprintln!("Error: {e:?}");
-                        break;
-                    }
-                }
-                match vp8dec.decode(&frame_buffer[..len]) {
-                    Ok(raw_video) => match outfile.write_all(raw_video) {
-                        Ok(_) => {}
-                        Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
-                        Err(e) => {
-                            eprintln!("Error: {e:?}");
-                            break;
-                        }
-                    },
-                    Err(e) => {
-                        eprintln!("Error: {e:?}");
-                        break;
-                    }
-                }
+        let frame_header = match reader.read_ivf_frame_header() {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Error: {e:?}");
+                break;
             }
+        };
+        let len: usize = frame_header.frame_size as _;
+        match reader.read_frame(&mut frame_buffer[..len]) {
+            Ok(_) => {}
+            Err(ref e) if e.kind() == ErrorKind::UnexpectedEof => break,
+            Err(e) => {
+                eprintln!("Error: {e:?}");
+                break;
+            }
+        }
+        let raw_video = match vp8dec.decode(&frame_buffer[..len]) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Error: {e:?}");
+                break;
+            }
+        };
+        match outfile.write_all(raw_video) {
+            Ok(_) => {}
+            Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
             Err(e) => {
                 eprintln!("Error: {e:?}");
                 break;
