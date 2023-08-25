@@ -32,6 +32,7 @@ fn decode(
     loop {
         let frame_header = match reader.read_ivf_frame_header() {
             Ok(f) => f,
+            Err(ref e) if e.kind() == ErrorKind::UnexpectedEof => break,
             Err(e) => {
                 eprintln!("Error: {e:?}");
                 break;
