@@ -1,58 +1,9 @@
-//extern crate env_libvpx_sys;
-
+use libivf_rs as ivf;
 use std::env;
 use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io::{ErrorKind, Write};
-
-// These are stubs for IVF and VP8Dec in Zig
-// mod ivf {
-//     pub struct IvfReader {
-//         // stub
-//     }
-
-//     pub struct IvfFrameHeader {
-//         // stub
-//     }
-
-//     impl IvfReader {
-//         pub fn init(_file: File) -> Result<Self, ()> {
-//             // stub
-//         }
-
-//         pub fn read_ivf_frame_header(&self, _header: &mut IvfFrameHeader) -> Result<(), ()> {
-//             // stub
-//         }
-
-//         // ... other necessary methods
-//     }
-// }
-use libivf_rs as ivf;
-
-mod vp8dec {
-    use std::error::Error;
-
-    pub struct VP8Dec {
-        // stub
-        rawvideo: Vec<u8>,
-    }
-
-    impl VP8Dec {
-        pub fn init(_fourcc: &[u8; 4]) -> Result<VP8Dec, Box<dyn Error>> {
-            // stub
-            Ok(VP8Dec {
-                rawvideo: vec![0u8; 10],
-            })
-        }
-
-        pub fn decode(&mut self, _frame_buffer: &[u8]) -> Result<&[u8], Box<dyn Error>> {
-            // stub
-            Ok(&self.rawvideo)
-        }
-
-        // ... other necessary methods
-    }
-}
+mod vpxdec;
 
 fn decode(
     input_file: &str,
@@ -76,7 +27,7 @@ fn decode(
     let bufsize = 64 * 1024;
     let mut frame_buffer = vec![0u8; bufsize];
     let fourcc = reader.header.fourcc;
-    let mut vp8dec = vp8dec::VP8Dec::init(&fourcc)?;
+    let mut vpxdec = vpxdec::VpxDec::init(&fourcc)?;
 
     loop {
         let frame_header = match reader.read_ivf_frame_header() {
@@ -95,7 +46,7 @@ fn decode(
                 break;
             }
         }
-        let raw_video = match vp8dec.decode(&frame_buffer[..len]) {
+        let raw_video = match vpxdec.decode(&frame_buffer[..len]) {
             Ok(r) => r,
             Err(e) => {
                 eprintln!("Error: {e:?}");
