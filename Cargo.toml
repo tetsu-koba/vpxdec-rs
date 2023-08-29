@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 libivf-rs = { git = "https://github.com/tetsu-koba/libivf-rs.git"}
-env-libvpx-sys = "5.1.2"
+env-libvpx-sys = {version = "5.1.2", features = ["generate"]}
