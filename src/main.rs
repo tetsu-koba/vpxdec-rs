@@ -57,10 +57,23 @@ fn decode(
             }
             unsafe {
                 let img = *img;
-                for i in 0..=2 {
+                let mut ptr = img.planes[0];
+                for _ in 0..img.d_h {
+                    match outfile.write_all(std::slice::from_raw_parts(ptr, img.d_w as _)) {
+                        Ok(_) => {}
+                        Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
+                        Err(e) => {
+                            eprintln!("Error: {e:?}");
+                            break;
+                        }
+                    }
+                    ptr = ptr.add(img.stride[0] as _);
+                }
+                for i in 1..3 {
                     let mut ptr = img.planes[i];
-                    for _ in 0..img.d_h {
-                        match outfile.write_all(std::slice::from_raw_parts(ptr, img.d_w as _)) {
+                    for _ in 0..img.d_h / 2 {
+                        match outfile.write_all(std::slice::from_raw_parts(ptr, (img.d_w / 2) as _))
+                        {
                             Ok(_) => {}
                             Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
                             Err(e) => {
