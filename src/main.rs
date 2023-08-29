@@ -4,7 +4,6 @@ use std::error::Error;
 use std::fs::{File, OpenOptions};
 use std::io::{ErrorKind, Write};
 mod vpxdec;
-
 fn decode(
     input_file: &str,
     output_file: &str,
@@ -47,22 +46,34 @@ fn decode(
                 break;
             }
         }
-        let raw_video = match vpxdec.decode(&frame_buffer[..len]) {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("Error: {e:?}");
-                break;
-            }
-        };
-        match outfile.write_all(raw_video) {
-            Ok(_) => {}
-            Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
-            Err(e) => {
-                eprintln!("Error: {e:?}");
-                break;
-            }
+        if let Err(e) = vpxdec.decode(&frame_buffer[..len]) {
+            eprintln!("Error: {e:?}");
+            break;
         }
-        frame_index += 1;
+        loop {
+            let img = vpxdec.get_frame();
+            if img == 0 as _ {
+                break;
+            }
+            unsafe {
+                let img = *img;
+                for i in 0..=2 {
+                    let mut ptr = img.planes[i];
+                    for _ in 0..img.d_h {
+                        match outfile.write_all(std::slice::from_raw_parts(ptr, img.d_w as _)) {
+                            Ok(_) => {}
+                            Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
+                            Err(e) => {
+                                eprintln!("Error: {e:?}");
+                                break;
+                            }
+                        }
+                        ptr = ptr.add(img.stride[i] as _);
+                    }
+                }
+            }
+            frame_index += 1;
+        }
     }
 
     _ = frame_index;

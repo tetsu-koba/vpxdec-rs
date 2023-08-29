@@ -9,16 +9,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
+name = "env-libvpx-sys"
+version = "5.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb3fc98d054ddbf6de8dbc1a33053c5830a3e515a33dde3cac840bfad583d230"
+dependencies = [
+ "pkg-config",
+]
+
+[[package]]
 name = "libivf-rs"
 version = "0.1.0"
-source = "git+https://github.com/tetsu-koba/libivf-rs.git#d432919e47001bd72e539ed5f8d7ef96fad2b174"
+source = "git+https://github.com/tetsu-koba/libivf-rs.git#c548166c1b672d7c8b9b4f8ce91d5bbd3a6e018a"
 dependencies = [
  "byteorder",
 ]
 
 [[package]]
+name = "pkg-config"
+version = "0.3.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
+
+[[package]]
 name = "vpxdec-rs"
 version = "0.1.0"
 dependencies = [
+ "env-libvpx-sys",
  "libivf-rs",
 ]

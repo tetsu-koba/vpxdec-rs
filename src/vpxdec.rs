@@ -1,22 +1,69 @@
 use std::error::Error;
 
 pub struct VpxDec {
-    // stub
-    rawvideo: Vec<u8>,
+    codec: vpx_sys::vpx_codec_ctx_t,
+    iter: vpx_sys::vpx_codec_iter_t,
 }
 
 impl VpxDec {
     pub fn init(_fourcc: &[u8; 4]) -> Result<Self, Box<dyn Error>> {
-        // stub
+        let mut codec = vpx_sys::vpx_codec_ctx_t {
+            config: vpx_sys::vpx_codec_ctx__bindgen_ty_1 { raw: 0 as _ },
+            err: vpx_sys::vpx_codec_err_t::VPX_CODEC_OK,
+            err_detail: 0 as _,
+            iface: 0 as _,
+            init_flags: 0 as _,
+            name: 0 as _,
+            priv_: 0 as _,
+        };
+        unsafe {
+            let interface = vpx_sys::vpx_codec_vp8_dx();
+            if interface == 0 as _ {
+                return Err("Failed to get Vp8 interface".into());
+            }
+            let res = vpx_sys::vpx_codec_dec_init_ver(
+                &mut codec,
+                interface,
+                std::ptr::null(),
+                0,
+                vpx_sys::VPX_DECODER_ABI_VERSION as _,
+            );
+            if res != vpx_sys::vpx_codec_err_t::VPX_CODEC_OK {
+                return Err("Failed to initialize Vpx decoder".into());
+            }
+        }
         Ok(VpxDec {
-            rawvideo: vec![0u8; 10],
+            codec,
+            iter: std::ptr::null(),
         })
     }
 
-    pub fn decode(&mut self, _frame_buffer: &[u8]) -> Result<&[u8], Box<dyn Error>> {
-        // stub
-        Ok(&self.rawvideo)
+    pub fn decode(&mut self, frame_buffer: &[u8]) -> Result<(), Box<dyn Error>> {
+        unsafe {
+            let res = vpx_sys::vpx_codec_decode(
+                &mut self.codec,
+                frame_buffer.as_ptr(),
+                frame_buffer.len() as _,
+                0 as _,
+                0 as _,
+            );
+            if res != vpx_sys::vpx_codec_err_t::VPX_CODEC_OK {
+                return Err("Failed to initialize Vpx decoder".into());
+            }
+        }
+        self.iter = std::ptr::null();
+        Ok(())
     }
 
-    // ... other necessary methods
+    pub fn get_frame(&mut self) -> *mut vpx_sys::vpx_image_t {
+        unsafe { vpx_sys::vpx_codec_get_frame(&mut self.codec, &mut self.iter) }
+    }
+}
+
+impl Drop for VpxDec {
+    fn drop(&mut self) {
+        unsafe {
+            vpx_sys::vpx_codec_destroy(&mut self.codec);
+        }
+    }
 }
