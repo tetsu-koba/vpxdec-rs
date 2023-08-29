@@ -1,7 +1,7 @@
 use libivf_rs as ivf;
 use std::env;
 use std::error::Error;
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::io;
 use std::io::{ErrorKind, Write};
 mod vpxdec;
@@ -12,20 +12,14 @@ fn decode(
     width: u32,
     height: u32,
 ) -> Result<(), Box<dyn Error>> {
-    let ivf_file = File::open(input_file)?;
-    let mut outfile = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(output_file)?;
-
-    let mut reader = ivf::IvfReader::init(ivf_file)?;
+    let mut outfile = File::create(output_file)?;
+    let mut reader = ivf::IvfReader::init(File::open(input_file)?)?;
     if reader.header.width != width as _ || reader.header.height != height as _ {
         return Err("Video size mismatch".into());
     }
 
     let mut frame_buffer = Vec::<u8>::new();
-    let fourcc = reader.header.fourcc;
-    let mut vpxdec = vpxdec::VpxDec::init(&fourcc)?;
+    let mut vpxdec = vpxdec::VpxDec::init(&reader.header.fourcc)?;
 
     let mut frame_index = 0;
     loop {
