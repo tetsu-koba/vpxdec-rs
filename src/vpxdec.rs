@@ -6,7 +6,7 @@ pub struct VpxDec {
 }
 
 impl VpxDec {
-    pub fn init(_fourcc: &[u8; 4]) -> Result<Self, Box<dyn Error>> {
+    pub fn init(fourcc: &[u8; 4]) -> Result<Self, Box<dyn Error>> {
         let mut codec = vpx_sys::vpx_codec_ctx_t {
             config: vpx_sys::vpx_codec_ctx__bindgen_ty_1 { raw: 0 as _ },
             err: vpx_sys::vpx_codec_err_t::VPX_CODEC_OK,
@@ -17,7 +17,13 @@ impl VpxDec {
             priv_: 0 as _,
         };
         unsafe {
-            let interface = vpx_sys::vpx_codec_vp8_dx();
+            let interface = if fourcc == b"VP80" {
+                vpx_sys::vpx_codec_vp8_dx()
+            } else if fourcc == b"VP90" {
+                vpx_sys::vpx_codec_vp9_dx()
+            } else {
+                return Err("Unsupported fourcc".into());
+            };
             if interface == 0 as _ {
                 return Err("Failed to get Vp8 interface".into());
             }
