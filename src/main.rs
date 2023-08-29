@@ -26,7 +26,7 @@ fn decode(
     let fourcc = reader.header.fourcc;
     let mut vpxdec = vpxdec::VpxDec::init(&fourcc)?;
 
-    loop {
+    'outer: loop {
         let frame_header = match reader.read_ivf_frame_header() {
             Ok(f) => f,
             Err(ref e) if e.kind() == ErrorKind::UnexpectedEof => break,
@@ -62,10 +62,10 @@ fn decode(
                 for _ in 0..img.d_h {
                     match outfile.write_all(std::slice::from_raw_parts(ptr, img.d_w as _)) {
                         Ok(_) => {}
-                        Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
+                        Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break 'outer,
                         Err(e) => {
                             eprintln!("Error: {e:?}");
-                            break;
+                            break 'outer;
                         }
                     }
                     ptr = ptr.add(img.stride[0] as _);
@@ -76,10 +76,10 @@ fn decode(
                         match outfile.write_all(std::slice::from_raw_parts(ptr, (img.d_w / 2) as _))
                         {
                             Ok(_) => {}
-                            Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break,
+                            Err(ref e) if e.kind() == ErrorKind::BrokenPipe => break 'outer,
                             Err(e) => {
                                 eprintln!("Error: {e:?}");
-                                break;
+                                break 'outer;
                             }
                         }
                         ptr = ptr.add(img.stride[i] as _);
