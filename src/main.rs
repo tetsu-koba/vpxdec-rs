@@ -17,14 +17,12 @@ fn decode(
         .open(output_file)?;
 
     let mut reader = ivf::IvfReader::init(ivf_file)?;
-    // ... checks for reader.header
     if reader.header.width != width as _ || reader.header.height != height as _ {
         return Err("Video size mismatch".into());
     }
 
     let mut frame_index = 0;
-    let bufsize = 64 * 1024;
-    let mut frame_buffer = vec![0u8; bufsize];
+    let mut frame_buffer = Vec::<u8>::new();
     let fourcc = reader.header.fourcc;
     let mut vpxdec = vpxdec::VpxDec::init(&fourcc)?;
 
@@ -37,8 +35,11 @@ fn decode(
                 break;
             }
         };
-        let len: usize = frame_header.frame_size as _;
-        match reader.read_frame(&mut frame_buffer[..len]) {
+        let frame_size: usize = frame_header.frame_size as _;
+        if frame_buffer.len() < frame_size {
+            frame_buffer.resize(frame_size, 0);
+        }
+        match reader.read_frame(&mut frame_buffer[..frame_size]) {
             Ok(_) => {}
             Err(ref e) if e.kind() == ErrorKind::UnexpectedEof => break,
             Err(e) => {
@@ -46,7 +47,7 @@ fn decode(
                 break;
             }
         }
-        if let Err(e) = vpxdec.decode(&frame_buffer[..len]) {
+        if let Err(e) = vpxdec.decode(&frame_buffer[..frame_size]) {
             eprintln!("Error: {e:?}");
             break;
         }
