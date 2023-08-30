@@ -27,13 +27,11 @@ fn decode(
         if let Err(e) = do_frame(&mut reader, &mut vpxdec, &mut frame_buffer, &mut outfile) {
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
                 match io_err.kind() {
-                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => {}
-                    _ => eprintln!("Error: {e:?}"),
+                    ErrorKind::UnexpectedEof | ErrorKind::BrokenPipe => break,
+                    _ => {}
                 }
-            } else {
-                eprintln!("Error: {e:?}");
             }
-            break;
+            return Err(e);
         }
         frame_index += 1;
     }
@@ -76,8 +74,8 @@ fn main() -> ExitCode {
 
     match decode(input_file, output_file, width, height) {
         Ok(_) => {}
-        Err(_) => {
-            eprintln!("Error occurred");
+        Err(e) => {
+            eprintln!("{e:?}");
             return ExitCode::FAILURE;
         }
     }
