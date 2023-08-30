@@ -54,24 +54,19 @@ fn do_frame(
     }
     reader.read_frame(&mut frame_buffer[..frame_size])?;
     vpxdec.decode(&frame_buffer[..frame_size])?;
-    loop {
-        let img = vpxdec.get_frame();
-        if img == 0 as _ {
-            break;
+    while let Some(img) = vpxdec.get_frame() {
+        let plane = img.planes(0);
+        let s = img.stride(0);
+        let w = img.d_w();
+        for h in 0..img.d_h() {
+            outfile.write_all(&plane[s * h..s * h + w])?;
         }
-        unsafe {
-            let img = *img;
-            let mut ptr = img.planes[0];
-            for _ in 0..img.d_h {
-                outfile.write_all(std::slice::from_raw_parts(ptr, img.d_w as _))?;
-                ptr = ptr.add(img.stride[0] as _);
-            }
-            for i in 1..3 {
-                let mut ptr = img.planes[i];
-                for _ in 0..img.d_h / 2 {
-                    outfile.write_all(std::slice::from_raw_parts(ptr, (img.d_w / 2) as _))?;
-                    ptr = ptr.add(img.stride[i] as _);
-                }
+        for i in 1..3 {
+            let plane = img.planes(i);
+            let s = img.stride(i);
+            let w = img.d_w() / 2;
+            for h in 0..img.d_h() / 2 {
+                outfile.write_all(&plane[s * h..s * h + w])?;
             }
         }
     }

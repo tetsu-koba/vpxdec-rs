@@ -61,8 +61,15 @@ impl VpxDec {
         Ok(())
     }
 
-    pub fn get_frame(&mut self) -> *mut vpx_sys::vpx_image_t {
-        unsafe { vpx_sys::vpx_codec_get_frame(&mut self.codec, &mut self.iter) }
+    pub fn get_frame(&mut self) -> Option<Image> {
+        unsafe {
+            let image = vpx_sys::vpx_codec_get_frame(&mut self.codec, &mut self.iter);
+            if image == 0 as _ {
+                None
+            } else {
+                Some(Image { image })
+            }
+        }
     }
 }
 
@@ -71,5 +78,30 @@ impl Drop for VpxDec {
         unsafe {
             vpx_sys::vpx_codec_destroy(&mut self.codec);
         }
+    }
+}
+
+pub struct Image {
+    image: *mut vpx_sys::vpx_image_t,
+}
+
+impl Image {
+    pub fn planes(&self, i: usize) -> &[u8] {
+        unsafe {
+            let img = *self.image;
+            std::slice::from_raw_parts(img.planes[i], (img.stride[0] as u32 * img.d_h) as _)
+        }
+    }
+
+    pub fn stride(&self, i: usize) -> usize {
+        unsafe { (*self.image).stride[i] as _ }
+    }
+
+    pub fn d_h(&self) -> usize {
+        unsafe { (*self.image).d_h as _ }
+    }
+
+    pub fn d_w(&self) -> usize {
+        unsafe { (*self.image).d_w as _ }
     }
 }
