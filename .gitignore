@@ -1,3 +1,6 @@
 /target
 *~
+recv*.sh*
+/testfiles/output*
+
 

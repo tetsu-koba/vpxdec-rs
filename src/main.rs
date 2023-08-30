@@ -81,3 +81,62 @@ fn main() -> ExitCode {
     }
     ExitCode::SUCCESS
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_vp8() {
+        let input_file = "testfiles/sample01.ivf";
+        let output_file = "testfiles/output01.i420";
+        let width: u32 = 160;
+        let height: u32 = 120;
+
+        match decode(input_file, output_file, width, height) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("{e:?}");
+            }
+        }
+        assert!(is_same_file(output_file, "testfiles/sample01.i420").unwrap());
+    }
+
+    #[test]
+    fn test_vp9() {
+        let input_file = "testfiles/sample02.ivf";
+        let output_file = "testfiles/output02.i420";
+        let width: u32 = 160;
+        let height: u32 = 120;
+
+        match decode(input_file, output_file, width, height) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("{e:?}");
+            }
+        }
+        assert!(is_same_file(output_file, "testfiles/sample02.i420").unwrap());
+    }
+
+    fn is_same_file(file1: &str, file2: &str) -> Result<bool, std::io::Error> {
+        use std::io::Read;
+        let f1 = File::open(file1)?;
+        let f2 = File::open(file2)?;
+
+        // Check if file sizes are different
+        if f1.metadata().unwrap().len() != f2.metadata().unwrap().len() {
+            return Ok(false);
+        }
+
+        // Use buf readers since they are much faster
+        let f1 = std::io::BufReader::new(f1);
+        let f2 = std::io::BufReader::new(f2);
+
+        // Do a byte to byte comparison of the two files
+        for (b1, b2) in f1.bytes().zip(f2.bytes()) {
+            if b1.unwrap() != b2.unwrap() {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
+    }
+}
