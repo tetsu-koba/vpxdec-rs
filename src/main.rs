@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::{ErrorKind, Write};
+use std::process::ExitCode;
 mod vpxdec;
 
 fn decode(
@@ -73,12 +74,12 @@ fn do_frame(
     Ok(())
 }
 
-fn main() {
+fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 5 {
         eprintln!("Usage: {} input_file output_file width height", args[0]);
-        std::process::exit(1);
+        return ExitCode::FAILURE;
     }
 
     let input_file = &args[1];
@@ -90,7 +91,8 @@ fn main() {
         Ok(_) => {}
         Err(_) => {
             eprintln!("Error occurred");
-            std::process::exit(1);
+            return ExitCode::FAILURE;
         }
     }
+    ExitCode::SUCCESS
 }
