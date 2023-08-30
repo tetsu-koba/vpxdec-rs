@@ -84,6 +84,8 @@ fn main() -> ExitCode {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn test_vp8() {
         let input_file = "testfiles/sample01.ivf";
