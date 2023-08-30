@@ -3,7 +3,7 @@ use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io;
-use std::io::{ErrorKind, Write};
+use std::io::ErrorKind;
 use std::process::ExitCode;
 mod vpxdec;
 
@@ -56,20 +56,7 @@ fn do_frame(
     reader.read_frame(&mut frame_buffer[..frame_size])?;
     vpxdec.decode(&frame_buffer[..frame_size])?;
     while let Some(img) = vpxdec.get_frame() {
-        let plane = img.planes(0);
-        let s = img.stride(0);
-        let w = img.d_w();
-        for h in 0..img.d_h() {
-            outfile.write_all(&plane[s * h..s * h + w])?;
-        }
-        for i in 1..3 {
-            let plane = img.planes(i);
-            let s = img.stride(i);
-            let w = img.d_w() / 2;
-            for h in 0..img.d_h() / 2 {
-                outfile.write_all(&plane[s * h..s * h + w])?;
-            }
-        }
+        img.write_all(outfile)?;
     }
     Ok(())
 }

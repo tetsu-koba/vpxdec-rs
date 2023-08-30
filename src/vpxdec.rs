@@ -104,4 +104,24 @@ impl Image {
     pub fn d_w(&self) -> usize {
         unsafe { (*self.image).d_w as _ }
     }
+
+    pub fn write_all(&self, writer: &mut dyn std::io::Write) -> Result<(), std::io::Error> {
+        // Currently assuming only YUV420
+        let img = self;
+        let plane = img.planes(0);
+        let s = img.stride(0);
+        let w = img.d_w();
+        for h in 0..img.d_h() {
+            writer.write_all(&plane[s * h..s * h + w])?;
+        }
+        for i in 1..3 {
+            let plane = img.planes(i);
+            let s = img.stride(i);
+            let w = img.d_w() / 2;
+            for h in 0..img.d_h() / 2 {
+                writer.write_all(&plane[s * h..s * h + w])?;
+            }
+        }
+        Ok(())
+    }
 }
